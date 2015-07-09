@@ -2,3 +2,6 @@
 *.swp
 .env
 .DS_Store
+venv
+*.pyc
+staticfiles

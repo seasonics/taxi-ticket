@@ -1,0 +1,1 @@
+web: gunicorn taxi_ticket.wsgi --log-file -
