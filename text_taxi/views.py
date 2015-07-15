@@ -6,6 +6,7 @@ from django.views.generic import TemplateView, View
 from twilio import twiml
 from django.utils.decorators import method_decorator
 from django_twilio.decorators import twilio_view
+from django_twilio.request import decompose
 
 class ThanksView(View):
     @method_decorator(twilio_view)
@@ -14,7 +15,11 @@ class ThanksView(View):
 
     def post(self, request):
         r = twiml.Response()
-        r.message('Thanks for the SMS message!')
+        twilio_request = decompose(request)
+        phone = twilio_request.from
+        plate = twilio_request.body
+        create_taxi(phone, plate)
+        r.message('Thanks for signing up')
         return r
 
 class SearchForm(forms.Form):
