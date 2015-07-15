@@ -16,7 +16,6 @@ class ThanksView(View):
 
     def post(self, request):
         r = twiml.Response()
-        twilio_request = decompose(request)
         plate = request.POST.get('Body', '')
         phone = request.POST.get('From', '')
         services.create_taxi(plate, phone)

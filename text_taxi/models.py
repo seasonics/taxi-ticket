@@ -7,7 +7,7 @@ class Taxi(models.Model):
 	plate_number = models.CharField(max_length=256)
 	phone_number = models.CharField(max_length=256)
 	start = models.DateTimeField()
-	end = models.DateTimeField()
+	end = models.DateTimeField(blank=True, null=True)
 
 
 class Ticket(models.Model):
