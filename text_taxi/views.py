@@ -16,7 +16,7 @@ class ThanksView(View):
     def post(self, request):
         r = twiml.Response()
         twilio_request = decompose(request)
-        phone = twilio_request.from
+        phone = twilio_request.From
         plate = twilio_request.body
         create_taxi(phone, plate)
         r.message('Thanks for signing up')
