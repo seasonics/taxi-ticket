@@ -2,6 +2,7 @@ from django.views.generic.edit import FormView
 from django import forms
 from django.shortcuts import render
 from services import ParkingSite, PlateDatabase
+import services
 from django.views.generic import TemplateView, View
 from twilio import twiml
 from django.utils.decorators import method_decorator
@@ -18,7 +19,7 @@ class ThanksView(View):
         twilio_request = decompose(request)
         phone = twilio_request.From
         plate = twilio_request.body
-        create_taxi(phone, plate)
+        services.create_taxi(phone, plate)
         r.message('Thanks for signing up')
         return r
 
