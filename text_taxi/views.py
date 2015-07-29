@@ -16,9 +16,16 @@ class ThanksView(View):
 
     def post(self, request):
         r = twiml.Response()
-        plate = request.POST.get('Body', '')
+        plate = request.POST.get('Body', '').strip().upper()
         phone = request.POST.get('From', '')
-        services.create_taxi(plate, phone)
+        PD = PlateDatabase()
+        plate_owner = PD.plateToOwner(plate)
+        if plate_owner is None:
+            r.message('License plate not found')
+            return r
+        if services.create_taxi(plate, phone) is None:
+            r.message('Already signed up with this plate and number')
+            return r
         r.message('Thanks for signing up')
         return r
 
