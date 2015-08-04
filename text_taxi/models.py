@@ -16,6 +16,6 @@ class Ticket(models.Model):
 	ticket_id = models.CharField(max_length=24, unique=True)
 	ticket_type = models.CharField(max_length=256,blank=True, null=True)
 	date = models.DateTimeField()
-	taxies = models.ManyToManyField(Taxi)
+	taxis = models.ManyToManyField(Taxi)
 
 

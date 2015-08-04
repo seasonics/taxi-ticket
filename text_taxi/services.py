@@ -10,6 +10,7 @@ from models import Taxi, Ticket
 import datetime
 from twilio.rest import TwilioRestClient
 from django.conf import settings
+from django.utils import timezone
 module_dir = os.path.dirname(__file__)
 
 
@@ -19,7 +20,7 @@ module_dir = os.path.dirname(__file__)
 def create_taxi(plateNumber, phoneNumber):
     if Taxi.objects.filter(plate_number=plateNumber, phone_number=phoneNumber).exists():
         return None
-    taxi = Taxi(plate_number=plateNumber, start=datetime.datetime.now(), last_run=datetime.datetime.now(), phone_number=phoneNumber)
+    taxi = Taxi(plate_number=plateNumber, start=timezone.now(), last_run=timezone.now(), phone_number=phoneNumber)
     taxi.save()
     return taxi
 
@@ -33,13 +34,16 @@ def create_ticket(ticketNumber, ticketType, ticketDate):
 def associate_ticket_to_taxi(ticket,taxi):
     ticket.taxis.add(taxi)
 
-def end_taxi_service(plateNumber):
-    taxi = Taxi().objects.get(plate_number=plateNumber)
-    taxi.end = datetime.datetime.now()
+def end_taxi_service(taxi):
+    taxi.end = timezone.now()
+    taxi.save()
+    return taxi
 
 
 def clear_taxis():
-    Taxi.objects.get(end__lte=datetime.now()-timedelta(days=7)).delete()
+    taxis = Taxi.objects.filter(end__lte=timezone.now()-datetime.timedelta(days=7))
+    if taxis.exists():
+      taxis.delete()
 
 class PlateDatabase:
     excel = os.path.join(module_dir, 'fixtures/taxi_plates.csv')
