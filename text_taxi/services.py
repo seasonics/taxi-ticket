@@ -76,12 +76,12 @@ class ParkingSite:
         encoded_data = urllib.urlencode(payload)
         request_object = urllib2.Request(self.URL, encoded_data.encode('utf-8'))
         response = opener.open(request_object)
-        self.response = response
+        return response.read()
 
-    def parse(self):
+    def parse(self, response):
         ticketInfo = {}
         tickets = []
-        soup = BeautifulSoup(self.response.read())
+        soup = BeautifulSoup(response)
         ticketlist = soup.select("table.ticketList tbody tr")
         for x in ticketlist:
             ticket = {}
@@ -102,21 +102,24 @@ class RunTaxi:
 
     def get_next_taxi(self):
         #should probs index last run
-        #also check if even exists
-        taxi = Taxi.objects.order_by('last_run')[0]
-        self.run_taxi(taxi.plate_number)
-        taxi.last_run = datetime.datetime.now()
-        taxi.save()
+        if Taxi.objects.all().exists():
+            taxi = Taxi.objects.order_by('last_run')[0]
+            return taxi
+        return None
 
-
-    def run_taxi(self, plateNumber):
+    def get_taxi_tickets(self, taxi):
         PS = ParkingSite()
         PD = PlateDatabase()
-        plate_owner = PD.plateToOwner(plate_number)
-        PS.siteRequest(plate_number, plate_owner)
-        tickets = PS.parse()["ticketList"]
+        plate_owner = PD.plateToOwner(taxi.plate_number)
+        response = PS.siteRequest(taxi.plate_number, plate_owner)
+        tickets = PS.parse(response)
+        taxi.last_run = timezone.now()
+        taxi.save()
+        return tickets
+
+    def run_taxi_tickets(self,taxi,tickets):
         for x in tickets:
-            self.run_ticket(x,plateNumber)
+            self.run_ticket(x,taxi)
 
 
     def run_ticket(self, ticket, plateNumber):
@@ -127,10 +130,11 @@ class RunTaxi:
                 if taxi.end is not None:
                     if ticket.date < taxi.end:
                         associate_ticket_to_taxi(ticket, taxi)
-                        self.send_message(taxi)
+                        return self.send_message(taxi)
                 else:
                     associate_ticket_to_taxi(ticket, taxi)
-                    self.send_message(taxi,ticket)
+                    return self.send_message(taxi,ticket)
+        return None
 
     def send_message(self, taxi, ticket):
         message_body = "New Ticket\n" + str(ticket.date) + ' ' + str(ticket.type)
@@ -139,3 +143,4 @@ class RunTaxi:
             to=taxi.phone_number,
             from_=settings.TWILIO_PHONE_NUMBER,
         )
+        return message

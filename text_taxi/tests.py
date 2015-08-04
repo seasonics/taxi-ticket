@@ -1,14 +1,19 @@
+import json as _json
+import os
+import services
+import datetime
 from django.test import TestCase
 from models import Taxi, Ticket
-import json as _json
 from django.test.client import Client
-import services
-from services import ParkingSite, PlateDatabase
-import datetime
+from services import ParkingSite, PlateDatabase, RunTaxi
 from django.utils import timezone
+module_dir = os.path.dirname(__file__)
 
 # Create your tests here.
-class CreateTaxi(TestCase):
+class CreateTaxiServices(TestCase):
+
+	def setUp(self):
+		self.sample_html = open(os.path.join(module_dir, 'fixtures/sample_parse.html'), 'rb').read()
 
 	def test_create_taxi(self):
 		before = timezone.now()
@@ -104,7 +109,65 @@ class CreateTaxi(TestCase):
 		PD = PlateDatabase()
 		plate_owner = PD.plateToOwner("6610tx")
 		self.assertEqual(plate_owner, "Chicago Carriage Cab")
-		self.assertIsNone(PD.plateToOwner("6610txsdf")
+		self.assertIsNone(PD.plateToOwner("6610txsdf"))
+
+	def test_parse(self):
+		PS = ParkingSite()
+		ticketInfo = PS.parse(self.sample_html)
+		self.assertEqual(ticketInfo["count"], 14)
+		self.assertEqual(ticketInfo["ticketList"][0]['ticket_type'], "Park or stand in bus/taxi/carriage stand")
+		self.assertEqual(ticketInfo["ticketList"][0]['ticket_id'], "0054711465")
+		self.assertEqual(ticketInfo["ticketList"][0]['date'], datetime.date(2008, 4, 10))
+
+	#if this fails might be site
+	def test_site_and_parse(self):
+		PS = ParkingSite()
+		PD = PlateDatabase()
+		plate_owner = PD.plateToOwner("6610TX")
+		response = PS.siteRequest("6610TX", plate_owner)
+		ticketInfo = PS.parse(response)
+		self.assertGreaterEqual(ticketInfo["count"], 14)
+		self.assertEqual(ticketInfo["ticketList"][0]['ticket_type'], "Park or stand in bus/taxi/carriage stand")
+		self.assertEqual(ticketInfo["ticketList"][0]['ticket_id'], "0054711465")
+		self.assertEqual(ticketInfo["ticketList"][0]['date'], datetime.date(2008, 4, 10))
+
+class RunTaxiServices(TestCase):
+
+	def setUp(self):
+		self.taxi_one = services.create_taxi("6610TX", "deiuedcned")
+		self.taxi_two = services.create_taxi("two", "deiuedcned")
+		self.taxi_three = services.create_taxi("three", "deiuedcned")
+
+	def test_get_next_taxi(self):
+		RT = RunTaxi()
+		taxi = RT.get_next_taxi()
+		self.assertEqual(self.taxi_one, taxi)
+
+	def test_get_next_taxi_none(self):
+		Taxi.objects.all().delete()
+		RT = RunTaxi()
+		taxi = RT.get_next_taxi()
+		self.assertIsNone(taxi)
+
+	def test_get_taxi_tickets(self):
+		RT = RunTaxi()
+		taxi = RT.get_next_taxi()
+		ticketInfo = RT.get_taxi_tickets(taxi)
+		self.assertGreaterEqual(ticketInfo["count"], 14)
+		self.assertEqual(ticketInfo["ticketList"][0]['ticket_type'], "Park or stand in bus/taxi/carriage stand")
+		self.assertEqual(ticketInfo["ticketList"][0]['ticket_id'], "0054711465")
+		self.assertEqual(ticketInfo["ticketList"][0]['date'], datetime.date(2008, 4, 10))
+		taxi = RT.get_next_taxi()
+		ticketInfo = RT.get_taxi_tickets(taxi)
+		self.assertEqual(ticketInfo["count"], 0)
+		self.assertEqual(self.taxi_two, taxi)
+		taxi = RT.get_next_taxi()
+		self.assertEqual(self.taxi_three, taxi)
+
+	def test_run_ticket(self):
+		print "x"
+
+
 
 
 

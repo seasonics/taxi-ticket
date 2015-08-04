@@ -50,6 +50,6 @@ class Tickets(TemplateView):
         PS = ParkingSite()
         PD = PlateDatabase()
         plate_owner = PD.plateToOwner(plate_number)
-        PS.siteRequest(plate_number, plate_owner)
-        context['tickets'] = PS.parse()
+        response = PS.siteRequest(plate_number, plate_owner)
+        context['tickets'] = PS.parse(response)
         return context
