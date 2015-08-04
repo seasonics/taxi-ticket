@@ -1,4 +1,4 @@
-import cookielib 
+import cookielib
 import urllib2
 import urllib
 import datetime
@@ -79,6 +79,7 @@ class ParkingSite:
         self.response = response
 
     def parse(self):
+        ticketInfo = {}
         tickets = []
         soup = BeautifulSoup(self.response.read())
         ticketlist = soup.select("table.ticketList tbody tr")
@@ -89,7 +90,13 @@ class ParkingSite:
             ticket["ticket_type"] = td_list[2].string
             ticket["date"] = datetime.datetime.strptime(td_list[5].string, "%m/%d/%Y").date()
             tickets.append(ticket)
-        return tickets
+
+        ticketInfo["count"] = len(tickets)
+        ticketInfo["ticketList"] = tickets
+
+        if not tickets:
+            ticketInfo["ticketList"].append({'ticket_type':"You're fine"})
+        return ticketInfo
 
 class RunTaxi:
 
@@ -107,7 +114,7 @@ class RunTaxi:
         PD = PlateDatabase()
         plate_owner = PD.plateToOwner(plate_number)
         PS.siteRequest(plate_number, plate_owner)
-        tickets = PS.parse()
+        tickets = PS.parse()["ticketList"]
         for x in tickets:
             self.run_ticket(x,plateNumber)
 
@@ -132,6 +139,3 @@ class RunTaxi:
             to=taxi.phone_number,
             from_=settings.TWILIO_PHONE_NUMBER,
         )
-
-
-            
