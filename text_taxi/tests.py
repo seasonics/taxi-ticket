@@ -1,6 +1,7 @@
 import json as _json
 import os
 import services
+from django.conf import settings
 import datetime
 from django.test import TestCase
 from models import Taxi, Ticket
@@ -191,25 +192,40 @@ class RunTaxiServices(TestCase):
 		taxi.save()
 		message =  RT.run_taxi_tickets(taxi,self.ticketList)
 		self.assertEqual(taxi.ticket_set.count(), 0)
-		
-		
+
+class ClientTest(TestCase):
+
+	#def setUp(self):
+
+	def test_create_one(self):
+		settings.DJANGO_TWILIO_FORGERY_PROTECTION = False
+		client = Client()
+		json_data = {
+  			"From": "+12928348",
+  			"Body": "6610TX",
+  			}
+  		response = client.post('/message/', json_data)
+		self.assertEqual(Taxi.objects.count(), 1)
+
+	def test_create_one_no_tx(self):
+		settings.DJANGO_TWILIO_FORGERY_PROTECTION = False
+		client = Client()
+		json_data = {
+  			"From": "+12928348",
+  			"Body": "6610",
+  			}
+  		response = client.post('/message/', json_data)
+		self.assertEqual(Taxi.objects.count(), 1)
+
+	def test_create_one_no_plate(self):
+		settings.DJANGO_TWILIO_FORGERY_PROTECTION = False
+		client = Client()
+		json_data = {
+  			"From": "+12928348",
+  			"Body": "661sdf0",
+  			}
+  		response = client.post('/message/', json_data)
+		self.assertEqual(Taxi.objects.count(), 0)
 
 
 
-
-
-
-
-
-
-
-
-
-
-	#def test_create_one(self):
-		#client = Client()
-		#json_data = '''{
-  			#"From": "+12928348",
-  			#"Body": "6610TX",
-  			#}'''
-		#self.assertEqual(False, True)

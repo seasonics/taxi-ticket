@@ -17,6 +17,8 @@ class ThanksView(View):
     def post(self, request):
         r = twiml.Response()
         plate = request.POST.get('Body', '').strip().upper()
+        if plate[-2:] != "TX":
+            plate = plate+"TX"
         phone = request.POST.get('From', '')
         PD = PlateDatabase()
         plate_owner = PD.plateToOwner(plate)
