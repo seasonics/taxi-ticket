@@ -118,14 +118,17 @@ class RunTaxi:
         return tickets
 
     def run_taxi_tickets(self,taxi,tickets):
-        for x in tickets:
-            self.run_ticket(x,taxi)
+        if not tickets['count'] == 0:
+            for x in tickets['ticketList']:
+                message = self.run_ticket(x,taxi)
+            return message
+        return None
 
 
-    def run_ticket(self, ticket, plateNumber):
+
+    def run_ticket(self, ticket, taxi):
         if not Ticket.objects.filter(ticket_id=ticket["ticket_id"]).exists():
             ticket = create_ticket(ticket["ticket_id"], ticket["ticket_type"],ticket["date"])
-            taxi = Taxi().objects.get(plate_number=plateNumber)
             if ticket.date > taxi.start:
                 if taxi.end is not None:
                     if ticket.date < taxi.end:
@@ -137,10 +140,10 @@ class RunTaxi:
         return None
 
     def send_message(self, taxi, ticket):
-        message_body = "New Ticket\n" + str(ticket.date) + ' ' + str(ticket.type)
+        message_body = "New Ticket\n" + str(ticket.date) + ' ' + str(ticket.ticket_type)
         message = settings.TWILIO_CLIENT.messages.create(
             body=message_body,  # Message body, if any
             to=taxi.phone_number,
-            from_=settings.TWILIO_PHONE_NUMBER,
+            from_=settings.TWILIO_NUMBER,
         )
         return message

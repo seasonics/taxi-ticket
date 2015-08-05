@@ -137,6 +137,10 @@ class RunTaxiServices(TestCase):
 		self.taxi_one = services.create_taxi("6610TX", "deiuedcned")
 		self.taxi_two = services.create_taxi("two", "deiuedcned")
 		self.taxi_three = services.create_taxi("three", "deiuedcned")
+		ticket_one = {"ticket_id":"1", "ticket_type": "test ticket", "date": timezone.now()}
+		ticket_two = {"ticket_id":"2", "ticket_type": "test ticket", "date": timezone.now()}
+		self.ticket_three = {"ticket_id":"3", "ticket_type": "test ticket", "date": timezone.now()}
+		self.ticketList = {"count":3,"ticketList": [ticket_one,ticket_two,self.ticket_three]}
 
 	def test_get_next_taxi(self):
 		RT = RunTaxi()
@@ -165,7 +169,30 @@ class RunTaxiServices(TestCase):
 		self.assertEqual(self.taxi_three, taxi)
 
 	def test_run_ticket(self):
-		print "x"
+		RT = RunTaxi()
+		taxi = RT.get_next_taxi()
+		message =  RT.run_taxi_tickets(taxi,self.ticketList)
+		self.assertEqual(message.body, "New Ticket\n"+str(self.ticket_three['date'])+" test ticket")
+		self.assertEqual(taxi.ticket_set.count(), 3)
+		self.assertEqual(Ticket.objects.all().count(), 3)
+
+	def test_taxi_start_after_ticket(self):
+		RT = RunTaxi()
+		taxi = RT.get_next_taxi()
+		taxi.start = taxi.start + datetime.timedelta(days=7)
+		taxi.save()
+		message =  RT.run_taxi_tickets(taxi,self.ticketList)
+		self.assertEqual(taxi.ticket_set.count(), 0)
+
+	def test_taxi_end_before_ticket(self):
+		RT = RunTaxi()
+		taxi = RT.get_next_taxi()
+		taxi.end = taxi.start - datetime.timedelta(days=7)
+		taxi.save()
+		message =  RT.run_taxi_tickets(taxi,self.ticketList)
+		self.assertEqual(taxi.ticket_set.count(), 0)
+		
+		
 
 
 
